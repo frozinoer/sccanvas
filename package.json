@@ -1,0 +1,19 @@
+{
+  "name": "ags",
+  "version": "1.0.0",
+  "description": "SquareCount Canvas",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "colors": "^1.1.2",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.4",
+    "moment": "^2.17.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": "6.1.0"
+  }
+}

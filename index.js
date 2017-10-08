@@ -20,13 +20,8 @@ const dotenvResult = require('dotenv').config();
 
 
 
-/*router.get('/', function (req, res, next) {
-    res.render('someView', {msg: 'Express'});
-});*/
-
 app.set('port', process.env.PORT || 3000);
 app.use(express.static('public'));
-
 
 
 app.listen(app.get('port'), function() {

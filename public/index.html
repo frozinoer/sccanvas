@@ -46,30 +46,31 @@
 			$(document).ready(function() {
 
 				let users = {
-					"0": {imageUrl: "images/RoundedProfilePhoto_Yudha.png"}, 
-					"1": {imageUrl: "images/Pic-Rounded-.png"}, 
-					"2": {imageUrl: "images/IMG_4790-jen-profile-0215-round.png"}, 
-					"3": {imageUrl: "images/DMaklin-2016-Profile-Rounded.png"}, 
-					"4": {imageUrl: "images/kevin-rounded-profile-pic.png"}
+					"0": {imageUrl: "images/fabrice.jpg"}, 
+					"1": {imageUrl: "images/richard.jpg"}, 
+					"2": {imageUrl: "images/cedric.jpg"}, 
+					"3": {imageUrl: "images/davida.jpg"}, 
+					"4": {imageUrl: "images/davidj.jpg"},
+					"5": {imageUrl: "images/giorgio.jpg"},					
 				};
 
 				let exampleData = {
 					"example1": {
 						from: {
-							id: "0"
+							id: "2"
 						}, 
 						to: [ 
-							{id: "3"} 
+							{id: "1"} 
 						], 
 						priceText: "80 €",
 						reasonText: null
 					}, "example2": {
 						from: {
-							id: "0"
+							id: "2"
 						}, 
 						to: [ 							
-							{id: "1"}, 						
-							{id: "2"}, 
+							{id: "0"}, 						
+							{id: "1"}, 
 							{id: "3"}, 
 							{id: "4"}  
 						], 
@@ -77,7 +78,7 @@
 						reasonText: "Courses de la coloc"						
 					}, "example3" : {
 						from: {
-							id: "0"
+							id: "2"
 						}, 
 						to: [ 
 							{id: "2"}, 
@@ -88,12 +89,13 @@
 						reasonText: "Concert au Café de la Danse"						
 					}, "example4" : {
 						from: {
-							id: "0"
+							id: "2"
 						}, 
 						to: [ 
+							{id: "0"},
+							{id: "1"}, 
+							{id: "5"}, 
 							{id: "2"}, 
-							{id: "3"}, 
-							{id: "4"}, 
 							{id: "3"}, 
 							{id: "4"},
 							{id: "4"}, 

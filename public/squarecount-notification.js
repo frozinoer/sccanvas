@@ -95,8 +95,8 @@ const defaultLayout = {
 		}		
 	}, cancelled: {
 		url: "images/cancel.png",
-		aspectRatio: 0.7,
-		opacity: 0.7
+		aspectRatio: 0.25,
+		opacity: 0.6
 	}
 }
 
@@ -108,10 +108,14 @@ const createNotification = (canvas, users, data, layout) => {
 		layout = defaultLayout;
 	}
 
-	initializeUserImages(users)
-		.then(() => initializeCancelImage(layout.cancelled.url))
-		.then(cancelImage => {
+	let cancelImage;
 
+	initializeUserImages(users)
+		.then(() => initializeImage(layout.cancelled.url))
+		.then(i => {
+			cancelImage = i;
+		})
+		.then(() => {
 
 			drawBackground(canvas);
 
@@ -179,7 +183,7 @@ const initializeUserImages = users => {
 	});
 }
 
-const initializeCancelImage = (url) => {
+const initializeImage = (url) => {
 	return new Promise((resolve, reject) => {
 		let image = new Image();
 		image.src = url;
@@ -261,7 +265,26 @@ const drawRoundedImage = (canvas, round, contour, image) => {
 
 	let ctx = canvas.getContext("2d");
 
-	ctx.drawImage(image, round.x, round.y, round.width, round.width);
+	ctx.save();
+
+	ctx.beginPath();
+	ctx.arc(round.x + round.width / 2, round.y + round.width / 2, round.width / 2, 0, Math.PI * 2, true);
+	ctx.closePath();
+	ctx.clip();
+
+	ctx.drawImage(image, round.x, round.y, round.width, round.width);	
+
+	ctx.restore();
+//	ctx.restore();
+
+
+        
+    /// change composite mode to use that shape
+//    ctx.globalCompositeOperation = 'source-in';
+    
+//	ctx.drawImage(image, round.x, round.y, round.width, round.width);
+//  ctx.globalCompositeOperation = 'source-over';	
+
 	drawContour(canvas, round, contour);
 }
 
@@ -329,21 +352,28 @@ const drawMultiLineText = (canvas, p, text, maxLineWidth, lineHeight) => {
 
 	let y = p.y;
 
-	let words = text.split(/\s+/);
-	let line = '';
+	if (ctx.measureText(text).width <= maxLineWidth) {
+		y += lineHeight;
+		ctx.fillText(text, p.x, y + p.font.size);		
 
-    for (let i = 0; i < words.length; i++) {
-    	let testLine = line + words[i] + ' ';
-      	let testWidth = ctx.measureText(testLine).width;
-      	if (testWidth > maxLineWidth && i > 0) {
-			ctx.fillText(line, p.x, y + p.font.size);
-        	line = words[i] + ' ';
-        	y += lineHeight;
-      	}
-      	else {
-        	line = testLine;
-	    }
-    }
-	ctx.fillText(line, p.x, y + p.font.size);
+	} else {
+		let words = text.split(/\s+/);
+		let line = '';
+
+	    for (let i = 0; i < words.length; i++) {
+	    	let testLine = line + words[i] + ' ';
+	      	let testWidth = ctx.measureText(testLine).width;
+	      	if (testWidth > maxLineWidth && i > 0) {
+				ctx.fillText(line, p.x, y + p.font.size);
+	        	line = words[i] + ' ';
+	        	y += lineHeight;
+	      	}
+	      	else {
+	        	line = testLine;
+		    }
+	    }		
+		ctx.fillText(line, p.x, y + p.font.size);	    
+	}
+
 }
 

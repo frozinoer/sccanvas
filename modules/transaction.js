@@ -1,4 +1,4 @@
-transaction = {
+exports.transaction = {
   "_id": "59d6599199b7abb0d4b3188e",
   "updatedAt": "2017-10-05T16:10:57.816Z",
   "createdAt": "2017-10-05T16:10:57.816Z",

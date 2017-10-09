@@ -1,3 +1,9 @@
+const Canvas = require('canvas-prebuilt');
+Image = Canvas.Image;
+
+const https = require('https');
+const fs = require('fs');
+
 const defaultLayout = {
 	from: {
 		round: {
@@ -94,75 +100,86 @@ const defaultLayout = {
 			family: 'Titillium Web'
 		}		
 	}, cancelled: {
-		url: "images/cancel.png",
+		url: "public/images/cancel.png",
 		aspectRatio: 0.25,
 		opacity: 0.6
 	}
 }
 
-const createNotification = (canvas, transaction, layout) => {
+exports.createNotification = (canvas, transaction, layout) => {
 
-	let ctx = canvas.getContext("2d");
-	if (!layout) {
-		layout = defaultLayout;
-	}
+	return new Promise((resolve, reject) => {
 
-	let cancelImage;
-	let users;
+		try {
 
-	initializeUserImages(transaction)
-		.then(u => {
-			users = u;
-		})
-		.then(() => initializeImage(layout.cancelled.url))
-		.then(i => {
-			cancelImage = i;
-		})
-		.then(() => {
-
-			drawBackground(canvas);
-
-			let fromUser = users[transaction.from.id];
-
-			drawFrom(canvas, layout.from, fromUser);
-
-			if (transaction.to.length == 1) {
-				let toUser = users[transaction.to[0].user.id];
-				drawTo1to1(canvas, layout.to1to1, toUser);
-			} else {
-				let toUsers = [];
-				transaction.to.forEach(t => {
-					toUsers.push(users[t.user.id]);
-				});
-				drawToGroup(canvas, layout.toGroup, toUsers);		
+			let ctx = canvas.getContext("2d");
+			if (!layout) {
+				layout = defaultLayout;
 			}
 
+			let cancelImage;
+			let users;
 
-			let maxReasonTextWidth = getTextWidth(canvas, layout.price.withReason, "999,99 €");
-			let priceTextWidth;
-			let priceLayout = layout.price.withoutReason;
-			if (transaction.reason) {
-				drawMultiLineText(canvas, layout.reason, transaction.reason, maxReasonTextWidth, 32);
-				priceLayout = layout.price.withReason;
-			}
-			let priceText = transaction.amount + " €";
-			priceTextWidth = drawText(canvas, priceLayout, priceText);				
-			
-			if (priceTextWidth && transaction.status !== "active") {
-				let width = cancelImage.width * layout.cancelled.aspectRatio;
-				let height = cancelImage.height * layout.cancelled.aspectRatio;
-				let p = {
-					opacity: layout.cancelled.opacity,
-					x: priceLayout.x + priceTextWidth / 2 - width / 2,
-					y: priceLayout.y + priceLayout.font.size / 2 + 12 - height / 2,
-					width: width,
-					height: height
-				}
-				drawCancelImage(canvas, p, cancelImage);
-			}
+			initializeUserImages(transaction)
+				.then(u => {
+					users = u;
+				})
+				.then(() => initializeImage(layout.cancelled.url))
+				.then(i => {
+					cancelImage = i;
+				})
+				.then(() => {
+
+					drawBackground(canvas);
 
 
-		})
+					let fromUser = users[transaction.from.id];
+
+					drawFrom(canvas, layout.from, fromUser);
+
+					if (transaction.to.length == 1) {
+						let toUser = users[transaction.to[0].user.id];
+						drawTo1to1(canvas, layout.to1to1, toUser);
+					} else {
+						let toUsers = [];
+						transaction.to.forEach(t => {
+							toUsers.push(users[t.user.id]);
+						});
+						drawToGroup(canvas, layout.toGroup, toUsers);		
+					}
+
+
+					let maxReasonTextWidth = getTextWidth(canvas, layout.price.withReason, "999,99 €");
+					let priceTextWidth;
+					let priceLayout = layout.price.withoutReason;
+					if (transaction.reason) {
+						drawMultiLineText(canvas, layout.reason, transaction.reason, maxReasonTextWidth, 32);
+						priceLayout = layout.price.withReason;
+					}
+					let priceText = transaction.amount + " €";
+					priceTextWidth = drawText(canvas, priceLayout, priceText);				
+					
+					if (priceTextWidth && transaction.status !== "active") {
+						let width = cancelImage.width * layout.cancelled.aspectRatio;
+						let height = cancelImage.height * layout.cancelled.aspectRatio;
+						let p = {
+							opacity: layout.cancelled.opacity,
+							x: priceLayout.x + priceTextWidth / 2 - width / 2,
+							y: priceLayout.y + priceLayout.font.size / 2 + 12 - height / 2,
+							width: width,
+							height: height
+						}
+						drawCancelImage(canvas, p, cancelImage);
+					}
+					resolve();
+				})
+		} catch(e) {
+			console.log(e);
+			reject(e);
+		}
+	});
+
+
 };
 
 const initializeUserImages = transaction => {
@@ -196,24 +213,40 @@ const initializeUserImages = transaction => {
 			let imageUrl = user.imageUrl;
 
 			promises.push(new Promise((resolve, reject) => {
-				let image = new Image();
-				image.src = imageUrl;
-				image.onload = () => {
-					console.log("Image " + imageUrl + " is loaded");
-					user.image = image;
-					resolve();
-				}	
+
+				https.get(imageUrl, res => {
+				    var buf = '';
+				    res.setEncoding('binary');
+				    res.on('data', chunk => { buf += chunk; });
+				    res.on('end', () => {
+				        var image = new Image;
+				        image.onload = () => {
+//							console.log("Image " + imageUrl + " is loaded");
+							user.image = image;
+							resolve();
+				        };
+				        image.onerror = function(err){
+				            console.log(err);
+				            reject(err);
+				        };
+				        image.src = new Buffer(buf, 'binary');
+				    });
+				});
 			}));
 		});
 		Promise.all(promises).then(() => resolve(users));
 	});
 }
 
-const initializeImage = (url) => {
+const initializeImage = (path) => {
 	return new Promise((resolve, reject) => {
-		let image = new Image();
-		image.src = url;
-		image.onload = () => resolve(image);
+
+		fs.readFile(__dirname + "/../" + path, function(err, content){
+		  	if (err) throw err;
+		  	let image = new Image;
+		  	image.src = content;
+		  	resolve(image);
+		});
 	});
 }
 

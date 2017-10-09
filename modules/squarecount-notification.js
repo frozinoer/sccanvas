@@ -1,9 +1,3 @@
-const Canvas = require('canvas-prebuilt');
-Image = Canvas.Image;
-
-const https = require('https');
-const fs = require('fs');
-
 const defaultLayout = {
 	from: {
 		round: {
@@ -106,7 +100,7 @@ const defaultLayout = {
 	}
 }
 
-exports.createNotification = (canvas, transaction, layout) => {
+exports.createNotification = (canvas, transaction, createUserImageFn, getLocalImageFn, layout) => {
 
 	return new Promise((resolve, reject) => {
 
@@ -120,11 +114,11 @@ exports.createNotification = (canvas, transaction, layout) => {
 			let cancelImage;
 			let users;
 
-			initializeUserImages(transaction)
+			initializeUserImages(transaction, createUserImageFn)
 				.then(u => {
 					users = u;
 				})
-				.then(() => initializeImage(layout.cancelled.url))
+				.then(() => initializeImage(layout.cancelled.url, getLocalImageFn))
 				.then(i => {
 					cancelImage = i;
 				})
@@ -182,7 +176,7 @@ exports.createNotification = (canvas, transaction, layout) => {
 
 };
 
-const initializeUserImages = transaction => {
+const initializeUserImages = (transaction, createUserImageFn) => {
 	return new Promise((resolve, reject) => {
 
 		let promises = [];
@@ -191,62 +185,36 @@ const initializeUserImages = transaction => {
 		let owner = transaction.owner;
 		users[owner.id] = {
 			id: owner.id,
-			imageUrl: owner["profile_pic"]
+			url: owner["profile_pic"]
 		}
 
 		let from = transaction.from;
 		users[from.id] = {
 			id: from.id,
-			imageUrl: from["profile_pic"]
+			url: from["profile_pic"]
 		}
 
 		transaction.to.forEach(to => {
 			users[to.user.id] = {
 				id: to.user.id,
-				imageUrl: to.user["profile_pic"]
+				url: to.user["profile_pic"]
 			}
 		});
 
-
 		Object.keys(users).forEach(id => {
-			let user = users[id];
-			let imageUrl = user.imageUrl;
-
 			promises.push(new Promise((resolve, reject) => {
-
-				https.get(imageUrl, res => {
-				    var buf = '';
-				    res.setEncoding('binary');
-				    res.on('data', chunk => { buf += chunk; });
-				    res.on('end', () => {
-				        var image = new Image;
-				        image.onload = () => {
-//							console.log("Image " + imageUrl + " is loaded");
-							user.image = image;
-							resolve();
-				        };
-				        image.onerror = function(err){
-				            console.log(err);
-				            reject(err);
-				        };
-				        image.src = new Buffer(buf, 'binary');
-				    });
-				});
+				createUserImageFn(users[id], resolve, reject);
 			}));
 		});
 		Promise.all(promises).then(() => resolve(users));
 	});
 }
 
-const initializeImage = (path) => {
+const initializeImage = (path, getLocalImageFn) => {
 	return new Promise((resolve, reject) => {
 
-		fs.readFile(__dirname + "/../" + path, function(err, content){
-		  	if (err) throw err;
-		  	let image = new Image;
-		  	image.src = content;
-		  	resolve(image);
-		});
+		getLocalImageFn(path, resolve, reject);
+
 	});
 }
 

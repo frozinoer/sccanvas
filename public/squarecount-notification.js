@@ -100,7 +100,7 @@ const defaultLayout = {
 	}
 }
 
-const createNotification = (canvas, transaction, layout) => {
+createNotification = (canvas, transaction, createUserImageFn, getLocalImageFn, layout) => {
 
 	let ctx = canvas.getContext("2d");
 	if (!layout) {
@@ -110,11 +110,11 @@ const createNotification = (canvas, transaction, layout) => {
 	let cancelImage;
 	let users;
 
-	initializeUserImages(transaction)
+	initializeUserImages(transaction, createUserImageFn)
 		.then(u => {
 			users = u;
 		})
-		.then(() => initializeImage(layout.cancelled.url))
+		.then(() => initializeImage(layout.cancelled.url, getLocalImageFn))
 		.then(i => {
 			cancelImage = i;
 		})
@@ -165,7 +165,7 @@ const createNotification = (canvas, transaction, layout) => {
 		})
 };
 
-const initializeUserImages = transaction => {
+const initializeUserImages = (transaction, createUserImageFn) => {
 	return new Promise((resolve, reject) => {
 
 		let promises = [];
@@ -174,46 +174,47 @@ const initializeUserImages = transaction => {
 		let owner = transaction.owner;
 		users[owner.id] = {
 			id: owner.id,
-			imageUrl: owner["profile_pic"]
+			url: owner["profile_pic"]
 		}
 
 		let from = transaction.from;
 		users[from.id] = {
 			id: from.id,
-			imageUrl: from["profile_pic"]
+			url: from["profile_pic"]
 		}
 
 		transaction.to.forEach(to => {
 			users[to.user.id] = {
 				id: to.user.id,
-				imageUrl: to.user["profile_pic"]
+				url: to.user["profile_pic"]
 			}
 		});
 
 
 		Object.keys(users).forEach(id => {
 			let user = users[id];
-			let imageUrl = user.imageUrl;
 
 			promises.push(new Promise((resolve, reject) => {
-				let image = new Image();
-				image.src = imageUrl;
-				image.onload = () => {
-					console.log("Image " + imageUrl + " is loaded");
-					user.image = image;
-					resolve();
-				}	
+				createUserImageFn(user, resolve, reject);
 			}));
 		});
 		Promise.all(promises).then(() => resolve(users));
 	});
 }
 
-const initializeImage = (url) => {
+/*const initializeImage = (url, getLocalImageFn) => {
 	return new Promise((resolve, reject) => {
 		let image = new Image();
 		image.src = url;
 		image.onload = () => resolve(image);
+	});
+}*/
+
+const initializeImage = (path, getLocalImageFn) => {
+	return new Promise((resolve, reject) => {
+
+		getLocalImageFn(path, resolve, reject);
+
 	});
 }
 

@@ -44,7 +44,7 @@
 				<canvas width="640" height="335" style="border:1px solid #EBEBEB"></canvas>
 			</div>
 		</div>
-		
+
 
 
 <!--		<div id="output">
@@ -138,7 +138,22 @@
 				createNotification($("#example3 canvas").get(0), users, exampleData["example3"]);
 				createNotification($("#example4 canvas").get(0), users, exampleData["example4"]);				*/
 
-				createNotification($("#example1 canvas").get(0), transaction);
+			    let createUserImageFn = (user, resolve, reject) => {
+					let image = new Image();
+					image.src = user.url;
+					image.onload = () => {
+						user.image = image;
+						resolve();
+					}	
+			    }
+
+			    let getLocalImageFn = (path, resolve, reject) => {
+					let image = new Image();
+					image.src = "../" + path;
+					image.onload = () => resolve(image);
+			    }
+
+				createNotification($("#example1 canvas").get(0), transaction, createUserImageFn, getLocalImageFn);
 
 			});
 

@@ -1,7 +1,8 @@
 "use strict";
 
 const _ = require('lodash');
-const fs = require('fs')
+const fs = require('fs');
+const https = require('https');
 
 const express = require('express');
 
@@ -29,8 +30,41 @@ app.use(express.static('public'));
 app.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 
+    let createUserImageFn = (user, resolve, reject) => {
+        https.get(user.url, res => {
+            let buf = '';
+            res.setEncoding('binary');
+            res.on('data', chunk => { buf += chunk; });
+            res.on('end', () => {
+                let image = new Image;
+                image.onload = () => {
+                    user.image = image;
+                    resolve();
+                };
+                image.onerror = function(err){
+                    console.log(err);
+                    reject(err);
+                };
+                image.src = new Buffer(buf, 'binary');
+            });
+        });
+    }
+
+    let getLocalImageFn = (path, resolve, reject) => {
+        fs.readFile(__dirname + "/" + path, function(err, content) {
+            if (err) {
+                reject(err);
+            } else {
+                let image = new Image;
+                image.src = content;
+                resolve(image);             
+              }
+        });
+
+    }
+
     SquarecountNotification
-        .createNotification(canvas, transaction)
+        .createNotification(canvas, transaction, createUserImageFn, getLocalImageFn)
         .then(() => {
             let filename = transaction.id + '.png';
             let out = fs.createWriteStream(__dirname + '/' + filename);
